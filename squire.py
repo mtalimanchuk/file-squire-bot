@@ -60,17 +60,20 @@ def show_help(update, context):
 def fetch_file(update, context):
     try:
         path_alias = context.args[0]
-        path = PATHS.get(path_alias)
-        if path:
-            logger.info(f"Sending {path} to {update.effective_user.username}")
-            update.message.reply_document(path.open('rb'),
-                                          caption=f"Your `{path}`, sir!",
-                                          parse_mode=ParseMode.MARKDOWN)
-        else:
-            update.message.reply_text(f"❌\nCouldn't find alias *{path_alias}*. Make sure you've added it to `paths.py`",
+        path = PATHS[path_alias]
+        f = path.open('rb')
+        logger.info(f"Sending {path} to {update.effective_user.username}")
+        update.message.reply_document(f,
+                                      caption=f"Your `{path}`, sir!",
                                       parse_mode=ParseMode.MARKDOWN)
     except IndexError:
         update.message.reply_text("⚠️\nPlease provide a configured path, e.g.\n`/fetch log_alias`\nYou can add them to `paths.py`",
+                                  parse_mode=ParseMode.MARKDOWN)
+    except KeyError:
+        update.message.reply_text(f"❌\nCouldn't find alias *{path_alias}*. Make sure you've added it to `paths.py`",
+                                  parse_mode=ParseMode.MARKDOWN)
+    except FileNotFoundError:
+        update.message.reply_text(f"❌\n*{path}* does not exist. Make sure `{path_alias}` is pointing to the correct file in `paths.py`",
                                   parse_mode=ParseMode.MARKDOWN)
     except AttributeError:
         pass
