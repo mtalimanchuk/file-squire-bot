@@ -7,7 +7,7 @@ from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler
 from telegram.utils.helpers import escape_markdown
 
-from config import TOKEN, DEV_KWARGS, WHITELIST
+from config import TOKEN, WHITELIST
 from paths import PATHS
 
 
@@ -84,7 +84,7 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater(TOKEN, use_context=True, request_kwargs=DEV_KWARGS)
+    updater = Updater(TOKEN, use_context=True)
 
     dp = updater.dispatcher
 
