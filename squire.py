@@ -48,7 +48,7 @@ def show_help(update, context):
         f"\n"
         f"▪️Open `paths.py`, add aliases and paths to {escape_markdown('PATH_MAP')}:\n"
         f"\n"
-        f"`PATH_MAP = {{\n\t\"me:\" \"squire.log\", \n\t\"flask\": \"myflaskapp/logs/errors.log\"\n}}`\n"
+        f"`PATH_MAP = {{\n\t\"me\": \"squire.log\", \n\t\"flask\": \"myflaskapp/logs/errors.log\"\n}}`\n"
         f"\n"
         f"▪️Start the bot. You are ready to fetch files from any device, e.g.\n"
         f"\t`/fetch me` to get _squire.log_"
