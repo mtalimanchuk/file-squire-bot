@@ -21,7 +21,7 @@ def whitelist_only(func):
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
         user = update.effective_user
-        logger.info(f"@{user.username} ({user.id}) is trying to access a priviledged command")
+        logger.info(f"@{user.username} ({user.id}) is trying to access a privileged command")
         if user.id not in WHITELIST:
             logger.warning(f"Unauthorized access denied for {user.username}.")
             text = (
