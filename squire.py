@@ -11,9 +11,11 @@ from config import TOKEN, WHITELIST
 from paths import PATHS
 
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO,
-                    filename='squire.log')
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    filename="squire.log",
+)
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +23,9 @@ def whitelist_only(func):
     @wraps(func)
     def wrapped(update, context, *args, **kwargs):
         user = update.effective_user
-        logger.info(f"@{user.username} ({user.id}) is trying to access a privileged command")
+        logger.info(
+            f"@{user.username} ({user.id}) is trying to access a privileged command"
+        )
         if user.id not in WHITELIST:
             logger.warning(f"Unauthorized access denied for {user.username}.")
             text = (
@@ -31,6 +35,7 @@ def whitelist_only(func):
             update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             return
         return func(update, context, *args, **kwargs)
+
     return wrapped
 
 
@@ -54,8 +59,8 @@ def show_help(update, context):
         f"▪️Open `paths.py`, add aliases and paths to `{escape_markdown('PATH_MAP')}`:\n"
         f"\n"
         f"`PATH_MAP = {{\n"
-        f"\t\"me\": \"squire.log\", \n"
-        f"\t\"flask\": \"myflaskapp/logs/errors.log\"\n}}`\n"
+        f'\t"me": "squire.log", \n'
+        f'\t"flask": "myflaskapp/logs/errors.log"\n}}`\n'
         f"\n"
         f"▪️Start the bot. Fetch files using aliases in `paths.py`\n"
         f"\t`/fetch me` to get _squire.log_"
@@ -71,25 +76,23 @@ def fetch_file(update, context):
             try:
                 path_alias = arg
                 path = PATHS[path_alias]
-                f = path.open('rb')
+                f = path.open("rb")
                 logger.info(f"Sending {path} to {update.effective_user.username}")
-                update.message.reply_document(f,
-                                              caption=f"Your `{path}`, sir!",
-                                              parse_mode=ParseMode.MARKDOWN)
+                update.message.reply_document(
+                    f, caption=f"Your `{path}`, sir!", parse_mode=ParseMode.MARKDOWN
+                )
             except KeyError:
                 text = (
                     f"❌\nCouldn't find alias *{path_alias}*.\n"
                     f"Make sure you've added it to `paths.py`"
                 )
-                update.message.reply_text(text,
-                                          parse_mode=ParseMode.MARKDOWN)
+                update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             except FileNotFoundError:
                 text = (
                     f"❌\n*{path}* does not exist.\n"
                     f"Make sure  alias `{path_alias}` is pointing to an existing file"
                 )
-                update.message.reply_text(text,
-                                          parse_mode=ParseMode.MARKDOWN)
+                update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
             except AttributeError:
                 # sometimes editing a previously sent chat message
                 # triggers the handler with an empty update
@@ -101,8 +104,7 @@ def fetch_file(update, context):
             "`/fetch log_alias`\n"
             "You can add them to `paths.py`"
         )
-        update.message.reply_text(text,
-                                  parse_mode=ParseMode.MARKDOWN)
+        update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
 
 
 def error(update, context):
@@ -129,5 +131,5 @@ def main():
     updater.idle()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
