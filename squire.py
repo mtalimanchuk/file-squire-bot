@@ -36,7 +36,12 @@ def whitelist_only(func):
 
 def start(update, context):
     """Send a message when the command /start is issued."""
-    update.message.reply_text("Hey! I can fetch you some files if you're whitelisted\n/help to learn more")
+    text = (
+        "Hi!"
+        "I can /fetch you some files if you are whitelisted\n"
+        "/help to learn more"
+    )
+    update.message.reply_text(text)
 
 
 def show_help(update, context):
@@ -44,13 +49,15 @@ def show_help(update, context):
     howto = (
         f"▪️Download this [repo](https://github.com/mtalimanchuk/file-squire-bot) to your remote machine\n"
         f"\n"
-        f"▪️Open `config.py`, set your TOKEN (string) and WHITELIST (list of user IDs)\n"
+        f"▪️Open `config.py`, set your `TOKEN` (string) and `WHITELIST` (list of user IDs)\n"
         f"\n"
-        f"▪️Open `paths.py`, add aliases and paths to {escape_markdown('PATH_MAP')}:\n"
+        f"▪️Open `paths.py`, add aliases and paths to `{escape_markdown('PATH_MAP')}`:\n"
         f"\n"
-        f"`PATH_MAP = {{\n\t\"me\": \"squire.log\", \n\t\"flask\": \"myflaskapp/logs/errors.log\"\n}}`\n"
+        f"`PATH_MAP = {{\n"
+        f"\t\"me\": \"squire.log\", \n"
+        f"\t\"flask\": \"myflaskapp/logs/errors.log\"\n}}`\n"
         f"\n"
-        f"▪️Start the bot. You are ready to fetch files from any device, e.g.\n"
+        f"▪️Start the bot. Fetch files using aliases in `paths.py`\n"
         f"\t`/fetch me` to get _squire.log_"
     )
     update.message.reply_text(howto, parse_mode=ParseMode.MARKDOWN)
@@ -58,25 +65,44 @@ def show_help(update, context):
 
 @whitelist_only
 def fetch_file(update, context):
-    try:
-        path_alias = context.args[0]
-        path = PATHS[path_alias]
-        f = path.open('rb')
-        logger.info(f"Sending {path} to {update.effective_user.username}")
-        update.message.reply_document(f,
-                                      caption=f"Your `{path}`, sir!",
-                                      parse_mode=ParseMode.MARKDOWN)
-    except IndexError:
-        update.message.reply_text("⚠️\nPlease provide a configured path, e.g.\n`/fetch log_alias`\nYou can add them to `paths.py`",
+    """Send a message or a file when the command /fetch [alias] is issued."""
+    if context.args:
+        for arg in context.args:
+            try:
+                path_alias = arg
+                path = PATHS[path_alias]
+                f = path.open('rb')
+                logger.info(f"Sending {path} to {update.effective_user.username}")
+                update.message.reply_document(f,
+                                              caption=f"Your `{path}`, sir!",
+                                              parse_mode=ParseMode.MARKDOWN)
+            except KeyError:
+                text = (
+                    f"❌\nCouldn't find alias *{path_alias}*.\n"
+                    f"Make sure you've added it to `paths.py`"
+                )
+                update.message.reply_text(text,
+                                          parse_mode=ParseMode.MARKDOWN)
+            except FileNotFoundError:
+                text = (
+                    f"❌\n*{path}* does not exist.\n"
+                    f"Make sure  alias `{path_alias}` is pointing to an existing file"
+                )
+                update.message.reply_text(text,
+                                          parse_mode=ParseMode.MARKDOWN)
+            except AttributeError:
+                # sometimes editing a previously sent chat message
+                # triggers the handler with an empty update
+                pass
+
+    else:
+        text = (
+            "⚠️\nPlease provide a configured path:\n"
+            "`/fetch log_alias`\n"
+            "You can add them to `paths.py`"
+        )
+        update.message.reply_text(text,
                                   parse_mode=ParseMode.MARKDOWN)
-    except KeyError:
-        update.message.reply_text(f"❌\nCouldn't find alias *{path_alias}*. Make sure you've added it to `paths.py`",
-                                  parse_mode=ParseMode.MARKDOWN)
-    except FileNotFoundError:
-        update.message.reply_text(f"❌\n*{path}* does not exist. Make sure `{path_alias}` is pointing to the correct file in `paths.py`",
-                                  parse_mode=ParseMode.MARKDOWN)
-    except AttributeError:
-        pass
 
 
 def error(update, context):
