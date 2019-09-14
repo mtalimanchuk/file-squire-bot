@@ -39,11 +39,39 @@ def whitelist_only(func):
     return wrapped
 
 
+def parse_args(context_args):
+    for arg in context_args:
+        try:
+            path_alias = arg
+            path = PATHS[path_alias].expanduser()
+            msg_text = f"`{path}`"
+            if path.exists():
+                yield True, path, msg_text
+            else:
+                raise FileNotFoundError
+        except KeyError:
+            error_text = (
+                f"❌\nCouldn't find alias *{path_alias}*.\n"
+                f"Make sure you've added it to `paths.py`"
+            )
+            yield False, arg, error_text
+        except FileNotFoundError:
+            error_text = (
+                f"❌\n*{path}* does not exist.\n"
+                f"Make sure  alias `{path_alias}` is pointing to an existing file"
+            )
+            yield False, arg, error_text
+        except AttributeError:
+            # sometimes editing a previously sent chat message
+            # triggers the handler with an empty update
+            pass
+
+
 def start(update, context):
     """Send a message when the command /start is issued."""
     text = (
         "Hi!"
-        "I can /fetch you some files if you are whitelisted\n"
+        "I can /fetch or /tail you some files if you are whitelisted\n"
         "/help to learn more"
     )
     update.message.reply_text(text)
@@ -72,36 +100,38 @@ def show_help(update, context):
 def fetch_file(update, context):
     """Send a message or a file when the command /fetch [alias] is issued."""
     if context.args:
-        for arg in context.args:
-            try:
-                path_alias = arg
-                path = PATHS[path_alias]
-                f = path.open("rb")
-                logger.info(f"Sending {path} to {update.effective_user.username}")
-                update.message.reply_document(
-                    f, caption=f"Your `{path}`, sir!", parse_mode=ParseMode.MARKDOWN
-                )
-            except KeyError:
-                text = (
-                    f"❌\nCouldn't find alias *{path_alias}*.\n"
-                    f"Make sure you've added it to `paths.py`"
-                )
+        for is_valid, arg, text in parse_args(context.args):
+            if is_valid:
+                logger.info(f"Sending {arg} to {update.effective_user.username}")
+                f = open(arg, 'rb')
+                update.message.reply_document(f, caption=text, parse_mode=ParseMode.MARKDOWN)
+            else:
                 update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-            except FileNotFoundError:
-                text = (
-                    f"❌\n*{path}* does not exist.\n"
-                    f"Make sure  alias `{path_alias}` is pointing to an existing file"
-                )
-                update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
-            except AttributeError:
-                # sometimes editing a previously sent chat message
-                # triggers the handler with an empty update
-                pass
 
     else:
         text = (
             "⚠️\nPlease provide a configured path:\n"
             "`/fetch log_alias`\n"
+            "You can add them to `paths.py`"
+        )
+        update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+
+
+@whitelist_only
+def tail_file(update, context):
+    tail_len = 10
+    if context.args:
+        for is_valid, arg, text in parse_args(context.args):
+            if is_valid:
+                logger.info(f"Tailing {arg} to {update.effective_user.username}")
+                with arg.open('r') as f:
+                    text = list(f)[-tail_len:]
+            update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+
+    else:
+        text = (
+            "⚠️\nPlease provide a configured path:\n"
+            "`/tail log_alias`\n"
             "You can add them to `paths.py`"
         )
         update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
@@ -113,16 +143,14 @@ def error(update, context):
 
 
 def main():
-    # Create the Updater and pass it your bot's token.
-    # Make sure to set use_context=True to use the new context based callbacks
-    # Post version 12 this will no longer be necessary
-    updater = Updater(TOKEN, use_context=True)
+    updater = Updater(TOKEN)
 
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", show_help))
     dp.add_handler(CommandHandler("fetch", fetch_file))
+    dp.add_handler(CommandHandler("tail", tail_file))
     dp.add_error_handler(error)
 
     updater.start_polling()
