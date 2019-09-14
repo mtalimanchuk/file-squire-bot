@@ -143,7 +143,8 @@ def error(update, context):
 
 
 def main():
-    updater = Updater(TOKEN)
+    updater = Updater(TOKEN, use_context=True)
+    # Note that this is only necessary in version 12 of python-telegram-bot. Version 13 will have use_context=True set as default.
 
     dp = updater.dispatcher
 
