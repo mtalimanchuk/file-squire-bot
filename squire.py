@@ -125,7 +125,7 @@ def tail_file(update, context):
             if is_valid:
                 logger.info(f"Tailing {arg} to {update.effective_user.username}")
                 with arg.open('r') as f:
-                    text = list(f)[-tail_len:]
+                    text = '\n'.join([escape_markdown(line) for line in list(f)[-tail_len:]])
             update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
 
     else:
